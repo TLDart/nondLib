@@ -48,7 +48,7 @@ void computeMaxima3D(std::vector<C> &v, M const &maxima, size_t obj);
 */
 
 template <typename C, typename M>
-void computeMaximaDC(std::vector<C> &v, M const &maxima, int const &dims)
+void computeMaximaDC(std::vector<C> &v, M const &maxima, int const &dims);
 /* Complexity O(log^k-1).n) for k >= 3 
     Parameters:
     v - Specifies which pointset the algorithm is going to be applied to 
@@ -66,7 +66,7 @@ void updateMaxima2D(std::vector<C> &v, M &maxima, C &point);
 */
 
 template <typename C, typename M>
-void updateMaxima3D(std::vector<C> &v, M &maxima, int obj, C &point)
+void updateMaxima3D(std::vector<C> &v, M &maxima, int obj, C &point);
 /* Complexity O(n) Assuming that compute was previously applied, undefined behavior otherwise
     Parameters:
     v - Specifies which pointset the algorithm is going to be applied to 
