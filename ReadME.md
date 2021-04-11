@@ -10,24 +10,18 @@ This Repository is a dedicated to keeping a Library for NonDominated Points.
 
 ## General Usage
 
-To use this Library you import "nondlib.cpp" file to your project and include the following code at the top of your code;
-
-```cpp
-#include "nondlib.hpp"
-```
-
-Make that your code can compile in atleast c++14 and that the the flag -O3 is used in the compilatio
+To use this library you copy the "nondlib.hpp" file into your project and include it where appropriate. Note that, this library requires at least C++14.
 
 ```bash
 #Makefile Example
-example: myfile.cpp  myfile2.cpp myheader2.h maxima.hpp
+example: myfile.cpp myfile2.cpp myheader2.h maxima.hpp
     g++ -O3 myfile.cpp  myfile2.cpp myheader2.h maxima.hpp -o example
 
 ```
 
 ## Function Details
 
-In the current version of the library, there are 3 algorithms:
+The current version of the library provides the following functions:
 
 ```cpp
 template <typename C, typename M>
@@ -65,22 +59,15 @@ void filterDivConqDC(std::vector<C> &v, M const &maxima, int const &dims);
 */
 
 template <typename C, typename M>
-void updateMaxima2D(std::vector<C> &v, M &maxima, C &point);
-/* Complexity O(n) Assuming that compute was previously applied, undefined behavior otherwise
-    Parameters:
-    v - Specifies which pointset the algorithm is going to be applied to 
-    maxima - Specifies the minimization, maximization behaviour
-    point - Point to update the set with
-*/
-
-template <typename C, typename M>
-void updateMaxima3D(std::vector<C> &v, M &maxima, int obj, C &point);
-/* Complexity O(n) Assuming that filter was previously applied, undefined behavior otherwise
+bool updateMaximaND(std::vector<C> &v, M &maxima, int obj, C &p) {;
+/* Complexity O(nd)
     Parameters:
     v - Specifies which pointset the algorithm is going to be applied to 
     maxima - Specifies the minimization, maximization behaviour
     obj - Specifies which parameter is gonna be used for the sort, Example: 0, would sort in x, and use y and z to solve a 2d problem to find the nonDominated Points
-    point - Point to update the set with
+    point - Point to update the set with\
+    Notes:
+        This algorithm is not stable
 */
 ```
 
@@ -89,7 +76,7 @@ void updateMaxima3D(std::vector<C> &v, M &maxima, int obj, C &point);
 ```cpp
 std::vector<std::vector<double>> example = {{1,1}, {2,4}, {1.5,1.6}, {3,2}, {3,3}};
 std::vector<double> mx = {1,1,1};
-filterDimSweep2D<std::vector<double>,std::vector<double>>(example,mx);
+nondlib::inplace::filterDimSweep2D<std::vector<double>,std::vector<double>>(example,mx);
 
 //example is now {{2,4}, {3,3}};
 ```
