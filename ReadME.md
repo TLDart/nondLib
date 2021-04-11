@@ -81,7 +81,7 @@ void updateMaxima3D(std::vector<C> &v, M &maxima, int obj, C &point);
 ```cpp
 std::vector<std::vector<double>> example = {{1,1}, {2,4}, {1.5,1.6}, {3,2}, {3,3}};
 std::vector<double> mx = {1,1,1};
-computeMaxima2D<std::vector<double>,std::vector<double>>(example,mx);
+filterDimSweep2D<std::vector<double>,std::vector<double>>(example,mx);
 
 //example is now {{2,4}, {3,3}};
 ```
