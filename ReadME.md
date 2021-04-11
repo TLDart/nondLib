@@ -10,10 +10,19 @@ This Repository is a dedicated to keeping a Library for NonDominated Points.
 
 ## General Usage
 
-To used this Library just import both files to your project and include the following code at the top of your code;
+To use this Library you import "nondlib.cpp" file to your project and include the following code at the top of your code;
 
 ```cpp
 #include "nondlib.hpp"
+```
+
+Make that your code can compile in atleast c++14 and that the the flag -O3 is used in the compilatio
+
+```bash
+#Makefile Example
+example: myfile.cpp  myfile2.cpp myheader2.h maxima.hpp
+    g++ -O3 myfile.cpp  myfile2.cpp myheader2.h maxima.hpp -o example
+
 ```
 
 ## Function Details
@@ -21,7 +30,6 @@ To used this Library just import both files to your project and include the foll
 In the current version of the library, there are 3 algorithms:
 
 ```cpp
-
 template <typename C, typename M>
 void filterQuadD(std::vector<C> &v, M &maxima);
 /* Complexity O(n^2)
@@ -67,7 +75,7 @@ void updateMaxima2D(std::vector<C> &v, M &maxima, C &point);
 
 template <typename C, typename M>
 void updateMaxima3D(std::vector<C> &v, M &maxima, int obj, C &point);
-/* Complexity O(n) Assuming that compute was previously applied, undefined behavior otherwise
+/* Complexity O(n) Assuming that filter was previously applied, undefined behavior otherwise
     Parameters:
     v - Specifies which pointset the algorithm is going to be applied to 
     maxima - Specifies the minimization, maximization behaviour
@@ -85,9 +93,3 @@ filterDimSweep2D<std::vector<double>,std::vector<double>>(example,mx);
 
 //example is now {{2,4}, {3,3}};
 ```
-
-## References
-
-* [1] Franco P. Preparata, Michael Ian Shamos - Computational Geometry - An Introduction, Springer 1985
-* [2] Carlos M.Fonseca, Luís Paquete, and Manuel López-Ibánez - An Improved Dimension-Sweep Algorithm for the HyperVolume Indicator 2006
-* [3] Stephan Borzsonyi, Donald Kossmann, and Konrad Stocker - The Skyline Operator
