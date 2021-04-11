@@ -23,7 +23,7 @@ In the current version of the library, there are 3 algorithms:
 ```cpp
 
 template <typename C, typename M>
-void computeMaximaQuadratic(std::vector<C> &v, M &maxima);
+void filterQuadD(std::vector<C> &v, M &maxima);
 /* Complexity O(n^2)
     Parameters:
     v - Specifies which pointset the algorithm is going to be applied to 
@@ -31,7 +31,7 @@ void computeMaximaQuadratic(std::vector<C> &v, M &maxima);
 */
 
 template <typename C, typename M>
-void computeMaxima2D(std::vector<C> &v, M const &maxima);
+void filterDimSweep2D(std::vector<C> &v, M const &maxima);
 /* Complexity O(nlog(n))
     Parameters:
     v - Specifies which pointset the algorithm is going to be applied to 
@@ -39,7 +39,7 @@ void computeMaxima2D(std::vector<C> &v, M const &maxima);
 */
 
 template <typename C, typename M>
-void computeMaxima3D(std::vector<C> &v, M const &maxima, size_t obj);
+void filterDimSweep3D(std::vector<C> &v, M const &maxima, size_t obj);
 /* Complexity O(nlog(n))
     Parameters:
     v - Specifies which pointset the algorithm is going to be applied to 
@@ -48,7 +48,7 @@ void computeMaxima3D(std::vector<C> &v, M const &maxima, size_t obj);
 */
 
 template <typename C, typename M>
-void computeMaximaDC(std::vector<C> &v, M const &maxima, int const &dims);
+void filterDivConqDC(std::vector<C> &v, M const &maxima, int const &dims);
 /* Complexity O(log^k-1).n) for k >= 3 
     Parameters:
     v - Specifies which pointset the algorithm is going to be applied to 

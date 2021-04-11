@@ -181,7 +181,7 @@ bool compareReverse(const std::vector<double> &lhs, const std::vector<double> &r
 }
 
 template <typename C, typename M>
-void computeMaximaQuadratic(std::vector<C> &v, M &maxima)
+void filterQuadD(std::vector<C> &v, M &maxima)
 {
     /* 
     Algorithm for calculating the maxima of a point set. Complexity O(n^2 * d), where n is the numbers of points in the set and d is the number of dimensions
@@ -228,7 +228,7 @@ void computeMaximaQuadratic(std::vector<C> &v, M &maxima)
 }
 
 template <typename C, typename M>
-void computeMaxima2D(std::vector<C> &v, M const &maxima)
+void filterDimSweep2D(std::vector<C> &v, M const &maxima)
 {
     /*Calculates the non dominated points on a 2d set using a matrix of vectors as its core data structure 
     Complexity : NlogN
@@ -347,7 +347,7 @@ bool _dominated2d(std::set<std::array<T, 2>, std::greater<std::array<T, 2>>> &au
  */
 
 template <typename C, typename M>
-void computeMaxima3D(std::vector<C> &v, M const &maxima, size_t obj)
+void filterDimSweep3D(std::vector<C> &v, M const &maxima, size_t obj)
 {
     //std::cout << v.size() << std::endl;
     multiplyMaxima<std::vector<C> &, M const &>(v,maxima);
@@ -711,7 +711,7 @@ std::vector<Point<T>> setMaximaK(std::vector<Point<T>> &S, int dims)
 }
 
 template <typename C, typename M>
-void computeMaximaDC(std::vector<C> &v, M const &maxima, int const &dims)
+void filterDivConqDC(std::vector<C> &v, M const &maxima, int const &dims)
 {
     using RefC = std::reference_wrapper<C>;
     using PointRefC = Point<RefC>;

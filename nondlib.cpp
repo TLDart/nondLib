@@ -19,7 +19,7 @@ int main(){
     std::vector<std::vector<double>> real2(real);
     std::vector<double> mx = {1,1,1};
 
-    computeMaxima3D<std::vector<double>, std::vector<double>>(real,mx,0);
+    filterDimSweep3D<std::vector<double>, std::vector<double>>(real,mx,0);
     //computeMaxima2D<std::vector<double>, std::vector<double>>(real, mx);
     //updateMaxima3D(test,mx,0, newpoint);
     for(int i = 0; i < real.size(); i++){
@@ -28,5 +28,5 @@ int main(){
         } 
             std::cout << std::endl;
    }
-    computeMaximaQuadratic<std::vector<double>, std::vector<double>>(real2, mx);
+    filterQuadD<std::vector<double>, std::vector<double>>(real2, mx);
 }
