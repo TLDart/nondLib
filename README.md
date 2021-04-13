@@ -144,9 +144,9 @@ bool nondlib::inplace::updateMaximaND(std::vector<C> &v, M const& maxima, P &&p)
 
 The not-in-place versions of the library are implemented under the
 `nondlib::notinplace` namespace using the same function names and
-parameters. The main difference is that point set `v` is passed as a
-const reference, and that the filtered/updated set is returned from the
-function. Example for the `filterQuadD` function:
+parameters. The two main differences are that point set `v` is passed as
+a const reference, and that the filtered/updated set is returned from
+the function as a vector. Example for the `filterQuadD` function:
 
 ```cpp
 // Parameters:
@@ -160,7 +160,7 @@ function. Example for the `filterQuadD` function:
 //   - v[i].size() != maxima.size() for any i
 //   - abs(maxima[i]) != 1
 template <typename C, typename M>
-std::vector<C> nondlib::inplace::filterQuadD(std::vector<C> &v, M const& maxima);
+std::vector<C> nondlib::inplace::filterQuadD(std::vector<C> const& v, M const& maxima);
 ```
 
 ## How to cite
