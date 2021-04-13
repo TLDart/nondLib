@@ -1,13 +1,17 @@
-# nondLib: A C++ library for archiving operations of nondominated points
+# nondLib: A C++ library for archiving operations on nondominated point sets
 
 [GitHub](https://github.com/TLDart/nondLib)
 
-**Maintainer:** [Duarte M. Dias](duartedias@student.dei.uc.pt)
+**Maintainer:** [Duarte M. Dias](https://github.com/TLDart)
 
 **Contributors:**
-    [Duarte M. Dias](duartedias@student.dei.uc.pt),
-    [Alexandre D. Jesus](https://adbjesus.com).
+    [Duarte M. Dias](https://github.com/TLDart),
+    [Alexandre D. Jesus](https://adbjesus.com),
     [Luís Paquete](https://www.uc.pt/go/paquete/).
+
+## How to cite
+
+Duarte M. Dias, Alexandre D. Jesus, Luís Paquete, A software library for archiving nondominated points, 2021 (unpublished)
 
 ----------------------------​
 
@@ -15,14 +19,14 @@ This library implements several operations to filter and maintain a set of
 nondominated points. In particular, the current version supports the following
 operations:
 
-- `filter` - filter a set of nondominated points from a larger set of points
-- `update` - try to insert a new point into a nondominated point set
+- `filter` - filters a set of nondominated points from a larger set of points
+- `update` -  updates the nondominated point set with a new point
 
 Both in-place and not-in-place versions exist for all currently implemented
-functions, such that the former implies altering the container that is passed to
+functions, such that the former implies modifying the container that is passed to
 the function, and the latter simply returns a new container.
 
-The details behind some of the functions are explained in the following article:
+The details for some of the functions are explained in the following article:
 
 Duarte M. Dias, Alexandre D. Jesus, Luís Paquete, A software library for
 archiving nondominated points, 2021 (submitted).
@@ -49,7 +53,7 @@ access containers are always valid, e.g `std::vector`, `std::array`, and
 `std::deque`.
 
 Moreover, most functions also require a random access container
-parameter named `maxima`, that denotes whether minimization (`maxima[i]
+parameter named `maxima`, which denotes whether minimization (`maxima[i]
 = -1`) or maximization (`maxima[i] = 1`) should be considered for a
 given objective `i`.
 
@@ -61,7 +65,7 @@ The following in-place functions are implemented
 
 ```cpp
 // Parameters:
-//   v - Objective point set to be filtered
+//   v - Point set to be filtered
 //   maxima - A random access container denoting whether minimization or
 //            maximization should be considered for each objective
 //
@@ -76,7 +80,7 @@ void nondlib::inplace::filterQuadD(std::vector<C> &v, M const& maxima);
 
 ```cpp
 // Parameters:
-//   v - Objective point set to be filtered
+//   v - Point set to be filtered
 //   maxima - A random access container denoting whether minimization or
 //            maximization should be considered for each objective
 //
@@ -91,26 +95,24 @@ void nondlib::inplace::filterDimSweep2D(std::vector<C> &v, M const& maxima);
 
 ```cpp
 // Parameters:
-//   v - Objective point set to be filtered
+//   v -Point set to be filtered
 //   maxima - A random access container denoting whether minimization or
 //            maximization should be considered for each objective
-//   obj - Specifies which objective is gonna be used for sorting, defaults to
-//         0, which would sort the points by objective 0, and use objectives 1
-//         and 2 to solve a 2d problem and find the nondomianted points
+//   obj - Specifies the primary dimension for sorting v (default is 0)
 //
 // Undefined behavior if:
 //   - v[i].size() != maxima.size() for any i
 //   - abs(maxima[i]) != 1
 //   - obj > 2
 template <typename C, typename M>
-void nondlib::inplace::filterDimSweep3D(std::vector<C> &v, M const& maxima, size_t obj = 0); // TODO default obj = 0
+void nondlib::inplace::filterDimSweep3D(std::vector<C> &v, M const& maxima, size_t obj = 0);
 ```
 
 #### Multidimensional divide-and-conquer algorithm for filter operation in any number of dimensions
 
 ```cpp
 // Parameters:
-//   v - Objective point set to be filtered
+//   v - Point set to be filtered
 //   maxima - A random access container denoting whether minimization or
 //            maximization should be considered for each objective
 //
@@ -118,7 +120,7 @@ void nondlib::inplace::filterDimSweep3D(std::vector<C> &v, M const& maxima, size
 //   - v[i].size() != maxima.size() for any i
 //   - abs(maxima[i]) != 1
 template <typename C, typename M>
-void nondlib::inplace::filterDivConqDC(std::vector<C> &v, M const& maxima); // TODO remove dims
+void nondlib::inplace::filterDivConqDC(std::vector<C> &v, M const& maxima);
 ```
 
 #### Dimension-sweep algorithm for update operation and any number of dimensions 
@@ -140,7 +142,6 @@ void nondlib::inplace::filterDivConqDC(std::vector<C> &v, M const& maxima); // T
 //   - abs(maxima[i]) != 1
 template <typename C, typename M, typename P>
 bool nondlib::inplace::updateMaximaND(std::vector<C> &v, M const& maxima, P &&p);
-    // TODO static_assert(std::is_same_v<std::remove_cvref_t<C>, std::remove_cvref_t<P>>);
 ```
 
 ### Not-in-place functions
