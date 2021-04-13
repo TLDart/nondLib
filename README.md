@@ -9,10 +9,6 @@
     [Alexandre D. Jesus](https://adbjesus.com),
     [Luís Paquete](https://www.uc.pt/go/paquete/).
 
-## How to cite
-
-Duarte M. Dias, Alexandre D. Jesus, Luís Paquete, A software library for archiving nondominated points, 2021 (unpublished)
-
 ----------------------------​
 
 This library implements several operations to filter and maintain a set of
@@ -166,3 +162,7 @@ function. Example for the `filterQuadD` function:
 template <typename C, typename M>
 std::vector<C> nondlib::inplace::filterQuadD(std::vector<C> &v, M const& maxima);
 ```
+
+## How to cite
+
+Duarte M. Dias, Alexandre D. Jesus, Luís Paquete, A software library for archiving nondominated points, 2021 (unpublished)
