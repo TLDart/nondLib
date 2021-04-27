@@ -111,12 +111,13 @@ void nondlib::inplace::filterDimSweep3D(std::vector<C> &v, M const& maxima, size
 //   v - Point set to be filtered
 //   maxima - A random access container denoting whether minimization or
 //            maximization should be considered for each objective
+//   base - base case for the algorithm, either 2 or 3 (default is 3)
 //
 // Undefined behavior if:
 //   - v[i].size() != maxima.size() for any i
 //   - abs(maxima[i]) != 1
 template <typename C, typename M>
-void nondlib::inplace::filterDivConqDC(std::vector<C> &v, M const& maxima);
+void nondlib::inplace::filterDivConqD(std::vector<C> &v, M const& maxima, size_t base = 3);
 ```
 
 #### Dimension-sweep algorithm for update operation and any number of dimensions 

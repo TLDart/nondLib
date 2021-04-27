@@ -48,8 +48,8 @@ int main() {
   printPoints(set);
 
   auto set3 = nondlib::notinplace::filterQuadD(set2, mx);
-  auto set4 = nondlib::notinplace::filterDivConqDC(set2, mx);
-  nondlib::inplace::filterDivConqDCC(set2, mx);
+  auto set4 = nondlib::notinplace::filterDivConqD(set2, mx);
+  nondlib::inplace::filterDivConqD(set2, mx);
 
   std::sort(set2.begin(), set2.end());
   std::sort(set3.begin(), set3.end());

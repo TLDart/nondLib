@@ -54,9 +54,9 @@ int main() {
   auto set7 = nondlib::notinplace::filterDimSweep3D(set2, mx, 1);
   auto set8 = nondlib::notinplace::filterDimSweep3D(set2, mx, 2);
   auto set9 = nondlib::notinplace::filterQuadD(set2, mx);
-  auto set10 = nondlib::notinplace::filterDivConqDC(set2, mx);
+  auto set10 = nondlib::notinplace::filterDivConqD(set2, mx);
   nondlib::inplace::filterQuadD(set2, mx);
-  nondlib::inplace::filterDivConqDCC(set3, mx);
+  nondlib::inplace::filterDivConqD(set3, mx);
   nondlib::inplace::filterDimSweep3D(set4, mx, 1);
   nondlib::inplace::filterDimSweep3D(set5, mx, 2);
 

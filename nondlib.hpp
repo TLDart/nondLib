@@ -3,7 +3,6 @@
 
 #include <algorithm>
 #include <functional>
-#include <iostream>
 #include <set>
 #include <tuple>
 #include <utility>
@@ -15,59 +14,309 @@ namespace nondlib {
 // between minor or even patch versions since it is not expected to be used by a
 // user.
 namespace priv {
-template <typename T>
-class Point {
- public:
-  T c;
-  int rank;
-  bool isA;
-  bool isB;
-
-  explicit Point(T c)
-      : c(c)
-      , rank(0)
-      , isA(false)
-      , isB(false) {}
-
-  Point(T c, int rank, bool isA, bool isB)
-      : c(c)
-      , rank(rank)
-      , isA(isA)
-      , isB(isB) {}
-
-  bool operator==(const Point &other) const {
-    return this->c == other.c;
-  };
-
-  bool operator<(const Point &other) const {
-    return this->c < other.c;
-  };
-};
 
 template <typename T>
-class cmpN {
-  int param;
-
- public:
-  cmpN(size_t p)
-      : param(p) {}
-
-  bool operator()(T const &lhs, T const &rhs) {
-    if (lhs.c.get()[param] < rhs.c.get()[param])
-      return true;
-    else if (lhs.c.get()[param] == rhs.c.get()[param]) {
-      for (size_t i = 0; i < lhs.c.get().size(); ++i) {
-        if (lhs.c.get()[i] < rhs.c.get()[i]) {
-          return true;
-        }
-        if (lhs.c.get()[i] > rhs.c.get()[i]) {
-          return false;
+void maximadc_filter2(std::vector<T> &U, std::vector<T> const &V) {
+  auto r1 = std::numeric_limits<typename T::value_type>::min();
+  auto end = U.begin();
+  for (auto itu = U.begin(), itv = V.begin();;) {
+    if (itu == U.end()) {
+      break;
+    }
+    if (itv == V.end()) {
+      for (; itu != U.end(); ++itu) {
+        if ((*itu)[1] >= r1) {
+          if (itu != end)
+            *end = std::move(*itu);
+          ++end;
         }
       }
+      break;
     }
-    return false;
+    if ((*itv)[0] >= (*itu)[0]) {
+      r1 = std::max(r1, (*itv)[1]);
+      ++itv;
+    } else {
+      if ((*itu)[1] >= r1) {
+        if (itu != end)
+          *end = std::move(*itu);
+        ++end;
+      }
+      ++itu;
+    }
   }
-};
+  U.erase(end, U.end());
+}
+
+template <typename T>
+void maximadc_filter3(std::vector<T> &U, std::vector<T> const &V) {
+  using D = typename T::value_type;
+  std::set<std::array<D, 2>> aux;
+
+  auto dominated = [&aux](auto const &p) {
+    auto tmp = std::array<D, 2>{p[1], p[2]};
+    auto it = aux.lower_bound(tmp);
+    if (it == aux.end()) {
+      return false;
+    }
+    return tmp[1] <= (*it)[1];
+  };
+
+  auto insert = [&aux](auto const &p) {
+    auto tmp = std::array<D, 2>{p[1], p[2]};
+    auto it = aux.lower_bound(tmp);
+    if (it != aux.end() && tmp[1] <= (*it)[1]) {  // dominated
+      return;
+    }
+    if (it != aux.end() && tmp[0] == (*it)[0]) {
+      it = aux.erase(it);
+    }
+    while (it != aux.begin()) {
+      it = std::prev(it);
+      if (tmp[1] >= (*it)[1]) {
+        it = aux.erase(it);
+      } else {
+        it = std::next(it);
+        break;
+      }
+    }
+    aux.insert(it, tmp);
+  };
+
+  auto end = U.begin();
+  for (auto itu = U.begin(), itv = V.begin();;) {
+    if (itu == U.end()) {
+      break;
+    }
+    if (itv == V.end()) {
+      for (; itu != U.end(); ++itu) {
+        if (!dominated(*itu)) {
+          if (itu != end)
+            *end = std::move(*itu);
+          ++end;
+        }
+      }
+      break;
+    }
+    if ((*itv)[0] >= (*itu)[0]) {
+      insert((*itv));
+      ++itv;
+    } else {
+      if (!dominated((*itu))) {
+        if (itu != end)
+          *end = std::move(*itu);
+        ++end;
+      }
+      ++itu;
+    }
+  }
+  U.erase(end, U.end());
+}
+
+// Filters all points in U that are not dominated by V
+template <typename T>
+void maximadc_filterk(std::vector<T> &U, std::vector<T> &V, size_t k, size_t base) {
+  if (V.empty() || U.empty()) {
+    return;
+  }
+
+  if (V.size() == 1 || U.size() == 1) {  // Filter naively
+    auto end = std::remove_if(U.begin(), U.end(), [&V, &k](auto const &u) {
+      for (auto const &v : V) {
+        size_t i = 0;
+        for (i = 0; i < k; ++i) {
+          if (v[i] < u[i]) {
+            break;
+          }
+        }
+        if (i == k) {
+          return true;
+        }
+      }
+      return false;
+    });
+    U.erase(end, U.end());
+    return;
+  }
+
+  if (k == base) {
+    if (base == 2) {
+      maximadc_filter2(U, V);
+    } else {
+      maximadc_filter3(U, V);
+    }
+    return;
+  }
+
+  // Equipartition V
+  std::vector<size_t> inds;
+  inds.reserve(V.size());
+  for (size_t i = 0; i < V.size(); i++)
+    inds.emplace_back(i);
+
+  auto cmp = [&V, &k](auto const &lhs, auto const &rhs) {
+    if (V[lhs][k - 1] > V[rhs][k - 1]) {
+      return true;
+    } else if (V[lhs][k - 1] < V[rhs][k - 1]) {
+      return false;
+    } else {
+      return lhs > rhs;
+    }
+  };
+
+  auto mid = inds.begin() + inds.size() / 2;
+  std::nth_element(inds.begin(), mid, inds.end(), cmp);
+
+  std::vector<bool> isV1(V.size(), false);
+  for (auto it = inds.begin(); it != mid; ++it) {
+    isV1[*it] = true;
+  }
+
+  auto ud = V[*mid][k - 1];
+
+  std::vector<T> V1, V2;
+  V1.reserve(V.size() / 2);
+  V2.reserve(V.size() / 2 + 1);
+  for (size_t i = 0; i < V.size(); ++i) {
+    if (isV1[i]) {
+      V1.push_back(std::move(V[i]));
+    } else {
+      V2.push_back(std::move(V[i]));
+    }
+  }
+
+  // Partition U by V2[0]
+  std::vector<T> U1, U2;
+  U1.reserve(U.size());
+  U2.reserve(U.size());
+  for (size_t i = 0; i < U.size(); ++i) {
+    if (U[i][k - 1] > ud) {
+      U1.push_back(std::move(U[i]));
+    } else {
+      U2.push_back(std::move(U[i]));
+    }
+  }
+
+  // Step 2
+  maximadc_filterk(U2, V2, k, base);
+  maximadc_filterk(U2, V1, k - 1, base);
+  maximadc_filterk(U1, V1, k, base);
+
+  // Merge U1 and U2 but in original order
+  size_t i = 0;
+  for (auto ita = U1.begin(), itb = U2.begin();;) {
+    if (ita == U1.end()) {
+      for (; itb != U2.end(); ++itb) {
+        U[i++] = std::move(*itb);
+      }
+      break;
+    }
+    if (itb == U2.end()) {
+      for (; ita != U1.end(); ++ita) {
+        U[i++] = std::move(*ita);
+      }
+      break;
+    }
+    if ((*ita)[0] >= (*itb)[0]) {
+      U[i++] = std::move(*ita++);
+    } else {
+      U[i++] = std::move(*itb++);
+    }
+  }
+  U.erase(U.begin() + i, U.end());
+
+  // Merge V1 and V2 but in original order
+  i = 0;
+  for (auto ita = V1.begin(), itb = V2.begin();;) {
+    if (ita == V1.end()) {
+      for (; itb != V2.end(); ++itb) {
+        V[i++] = std::move(*itb);
+      }
+      break;
+    }
+    if (itb == V2.end()) {
+      for (; ita != V1.end(); ++ita) {
+        V[i++] = std::move(*ita);
+      }
+      break;
+    }
+    if ((*ita)[0] >= (*itb)[0]) {
+      V[i++] = std::move(*ita++);
+    } else {
+      V[i++] = std::move(*itb++);
+    }
+  }
+}
+
+template <typename T>
+void maximadc_maximak(std::vector<T> &S, size_t k, size_t base) {
+  if (S.size() <= 1) {
+    return;
+  }
+
+  // Find the median
+  std::vector<size_t> inds;
+  inds.reserve(S.size());
+  for (size_t i = 0; i < S.size(); i++)
+    inds.emplace_back(i);
+
+  auto cmp = [&S, &k](auto const &lhs, auto const &rhs) {
+    if (S[lhs][k - 1] > S[rhs][k - 1]) {
+      return true;
+    } else if (S[lhs][k - 1] < S[rhs][k - 1]) {
+      return false;
+    } else {
+      return lhs > rhs;
+    }
+  };
+
+  auto mid = inds.begin() + inds.size() / 2;
+  std::nth_element(inds.begin(), mid, inds.end(), cmp);
+
+  std::vector<bool> isA(S.size(), false);
+  for (auto it = inds.begin(); it != mid; ++it) {
+    isA[*it] = true;
+  }
+
+  std::vector<T> A, B;
+  A.reserve(S.size() / 2);
+  B.reserve(S.size() / 2 + 1);
+  for (size_t i = 0; i < S.size(); ++i) {
+    if (isA[i]) {
+      A.push_back(std::move(S[i]));
+    } else {
+      B.push_back(std::move(S[i]));
+    }
+  }
+
+  // Step 2
+  maximadc_maximak(A, k, base);
+  maximadc_maximak(B, k, base);
+  maximadc_filterk(B, A, k - 1, base);
+
+  // Merge A \cup B but in original order
+  size_t i = 0;
+  for (auto ita = A.begin(), itb = B.begin();;) {
+    if (ita == A.end()) {
+      while (itb != B.end()) {
+        S[i++] = std::move(*itb++);
+      }
+      break;
+    }
+    if (itb == B.end()) {
+      while (ita != A.end()) {
+        S[i++] = std::move(*ita++);
+      }
+      break;
+    }
+    if ((*ita)[0] >= (*itb)[0]) {
+      S[i++] = std::move(*ita++);
+    } else {
+      S[i++] = std::move(*itb++);
+    }
+  }
+  S.erase(S.begin() + i, S.end());
+}
 
 template <typename T>
 bool cmp2(T &lhs, T &rhs) {
@@ -144,224 +393,6 @@ bool dominates(T &p1, U &p2) {
 }
 
 template <typename T>
-void ecdf2(std::vector<std::reference_wrapper<Point<T>>> &S) {
-  if (S.size() == 0)
-    return;
-  auto last = std::numeric_limits<typename T::type::value_type>::max();
-  for (size_t i = 0; i < S.size(); ++i) {
-    if (S[i].get().c.get()[1] >= last) {
-      S[i].get().rank = 1;
-    } else {
-      last = std::min(last, S[i].get().c.get()[1]);
-    }
-  }
-  return;
-}
-template <typename T>
-void ecdf2_modified(std::vector<std::reference_wrapper<Point<T>>> &S) {
-  if (S.size() == 0)
-    return;
-  auto last = std::numeric_limits<typename T::type::value_type>::max();
-  for (size_t i = 0; i < S.size(); ++i) {
-    if (S[i].get().isB && S[i].get().c.get()[1] >= last) {
-      S[i].get().rank = 1;
-    } else if (S[i].get().isA) {
-      last = std::min(last, S[i].get().c.get()[1]);
-    }
-  }
-  return;
-}
-
-template <typename T>
-void ecdfk_modified(std::vector<std::reference_wrapper<Point<T>>> &S, size_t k) {
-  // Base case
-  if (S.size() == 1) {
-    S[0].get().rank = 0;
-    return;
-  }
-  if (S.size() == 0) {
-    return;
-  }
-  if (k == 2) {
-    ecdf2_modified(S);
-    return;
-  }
-
-  // Find the median
-  std::vector<size_t> sA;
-  sA.reserve(S.size());
-  for (size_t i = 0; i < S.size(); i++) {
-    sA.emplace_back(i);
-  }
-
-  auto cmp = cmpN<Point<T>>(k - 1);
-  auto cmp2 = [&cmp, &S](auto const &lhs, auto const &rhs) {
-    return cmp(S[lhs], S[rhs]);
-  };
-  auto mid = sA.begin() + sA.size() / 2;
-  std::nth_element(sA.begin(), mid, sA.end(), cmp2);
-
-  std::vector<bool> isA(S.size(), false);
-  for (auto it = sA.begin(); it != mid; ++it) {
-    isA[*it] = true;
-  }
-
-  std::vector<std::reference_wrapper<Point<T>>> A, B;
-  A.reserve(S.size());
-  B.reserve(S.size());
-  for (size_t i = 0; i < S.size(); i++) {
-    if (isA[i]) {
-      A.push_back(S[i]);
-    } else {
-      B.push_back(S[i]);
-    }
-  }
-
-  // Step 2
-  ecdfk_modified(A, k);
-  ecdfk_modified(B, k);
-
-  // Build aux
-  std::vector<std::pair<Point<T>, std::reference_wrapper<Point<T>>>> aux;
-  aux.reserve(S.size());
-  for (size_t i = 0; i < S.size(); i++) {
-    if (S[i].get().rank > 0)
-      continue;
-    if (isA[i]) {
-      aux.emplace_back(Point<T>(S[i].get().c, 0, S[i].get().isA, false), S[i]);
-    } else {
-      aux.emplace_back(Point<T>(S[i].get().c, 0, false, S[i].get().isB), S[i]);
-    }
-  }
-
-  // Merge
-  std::vector<std::reference_wrapper<Point<T>>> v;
-  v.reserve(aux.size());
-  for (auto &p : aux) {
-    v.push_back(p.first);
-  };
-  ecdfk_modified(v, k - 1);
-
-  for (auto &p : aux) {
-    if (p.first.isB) {
-      p.second.get().rank += p.first.rank;
-    }
-  }
-}
-
-template <typename T>
-void ecdfk(std::vector<std::reference_wrapper<Point<T>>> &S, size_t k) {
-  // Base case
-  if (S.size() == 1) {
-    S[0].get().rank = 0;
-    return;
-  }
-  if (S.size() == 0) {
-    return;
-  }
-  if (k == 2) {
-    ecdf2(S);
-    return;
-  }
-
-  // Find the median
-  std::vector<size_t> sA;
-  sA.reserve(S.size());
-  for (size_t i = 0; i < S.size(); i++) {
-    sA.emplace_back(i);
-  }
-
-  auto cmp = cmpN<Point<T>>(k - 1);
-  auto cmp2 = [&cmp, &S](auto const &lhs, auto const &rhs) {
-    return cmp(S[lhs], S[rhs]);
-  };
-  auto mid = sA.begin() + sA.size() / 2;
-  std::nth_element(sA.begin(), mid, sA.end(), cmp2);
-
-  std::vector<bool> isA(S.size(), false);
-  for (auto it = sA.begin(); it != mid; ++it) {
-    isA[*it] = true;
-  }
-
-  std::vector<std::reference_wrapper<Point<T>>> A;
-  A.reserve(S.size());
-  std::vector<std::reference_wrapper<Point<T>>> B;
-  B.reserve(S.size());
-  for (size_t i = 0; i < S.size(); i++) {
-    if (isA[i]) {
-      A.push_back(S[i]);
-    } else {
-      B.push_back(S[i]);
-    }
-  }
-
-  // Step 2
-  ecdfk(A, k);
-  ecdfk(B, k);
-
-  // Build aux
-  std::vector<std::pair<Point<T>, std::reference_wrapper<Point<T>>>> aux;
-  aux.reserve(S.size());
-  for (size_t i = 0; i < S.size(); i++) {
-    if (S[i].get().rank != 0)
-      continue;
-    if (isA[i]) {
-      aux.emplace_back(Point<T>(S[i].get().c, 0, true, false), S[i]);
-    } else {
-      aux.emplace_back(Point<T>(S[i].get().c, 0, false, true), S[i]);
-    }
-  }
-
-  // Merge
-  std::vector<std::reference_wrapper<Point<T>>> v;
-  v.reserve(aux.size());
-  for (auto &p : aux) {
-    v.push_back(p.first);
-  };
-  ecdfk_modified(v, k - 1);
-
-  for (auto &p : aux) {
-    if (p.first.isB) {
-      p.second.get().rank += p.first.rank;
-    }
-  }
-}
-
-template <typename T>
-std::vector<Point<T>> setMaximaK(std::vector<Point<T>> &S, int dims) {
-  for (auto &p : S) {
-    for (int k = 0; k < dims; k++) {
-      p.c[k] = -p.c[k];
-    }
-  }
-
-  // printPointsP(S, "prev sort");
-  sort(S.begin(), S.end(), cmpLex<Point<T>>);
-  std::vector<Point<std::reference_wrapper<T>>> aux;
-  aux.reserve(S.size());
-  for (auto &s : S) {
-    aux.emplace_back(std::ref(s.c));
-  }
-  std::vector<std::reference_wrapper<Point<std::reference_wrapper<T>>>> aux2(aux.begin(),
-                                                                             aux.end());
-  ecdfk(aux2, dims);
-
-  for (auto &p : S) {
-    for (int k = 0; k < dims; k++) {
-      p.c[k] = -p.c[k];
-    }
-  }
-
-  std::vector<Point<T>> nondom;
-  for (int i = 0; i < aux.size(); i++) {
-    if (aux[i].rank == 0) {
-      nondom.push_back(S[i]);
-    }
-  }
-  return nondom;
-}
-
-template <typename T>
 bool _dominated2d(std::set<std::array<T, 2>, std::greater<std::array<T, 2>>> &aux,
                   std::vector<T> const &p, size_t lo, size_t hi) {
   /*
@@ -417,7 +448,6 @@ void filterQuadD(std::vector<C> &v, M const &maxima) {
   are removed using a swap-pop scheme
   */
   multiplyMaxima(v, maxima);
-  std::vector<std::vector<double>> result;
   for (size_t point = 0; point < v.size(); point++) {
     for (size_t rempoint = point + 1; rempoint < v.size(); ++rempoint) {
       bool dominated = true, dominator = true;
@@ -449,6 +479,10 @@ void filterQuadD(std::vector<C> &v, M const &maxima) {
 
 template <typename C, typename M>
 void filterDimSweep2D(std::vector<C> &v, M const &maxima) {
+  if (v.empty()) {
+    return;
+  }
+
   /*Calculates the non dominated points on a 2d set using a matrix of vectors as
   its core data structure Complexity : NlogN
   */
@@ -481,6 +515,10 @@ void filterDimSweep2D(std::vector<C> &v, M const &maxima) {
  */
 template <typename C, typename M>
 void filterDimSweep3D(std::vector<C> &v, M const &maxima, size_t obj = 0) {
+  if (v.empty()) {
+    return;
+  }
+
   // std::cout << v.size() << std::endl;
   multiplyMaxima(v, maxima);
 
@@ -509,43 +547,44 @@ void filterDimSweep3D(std::vector<C> &v, M const &maxima, size_t obj = 0) {
 }
 
 template <typename C, typename M>
-void filterDivConqDCC(std::vector<C> &v, M const &maxima) {
-  using RefC = std::reference_wrapper<C>;
-  using PointRefC = Point<RefC>;
-  using RefPointRefC = std::reference_wrapper<PointRefC>;
+void filterDivConqD(std::vector<C> &v, M const &maxima, size_t base = 3) {
+  if (base != 2 && base != 3) {
+    throw("Base case for divide and conquer must be 2 or 3!");
+  }
 
-  size_t dims = maxima.size();
+  size_t const dims = maxima.size();
+  if (dims < 2) {
+    throw("There must be at least 2 objectives!");
+  } else if (dims == 2) {
+    return filterDimSweep2D(v, maxima);
+  } else if (dims == 3) {
+    return filterDimSweep3D(v, maxima);
+  }
+
   for (size_t i = 0; i < v.size(); ++i) {
-    for (size_t j = 0; j < dims; ++j) {
-      v[i][j] *= -maxima[j];
+    for (size_t j = 0; j < v[0].size(); ++j) {
+      v[i][j] *= maxima[j];
     }
   }
+
   auto lexsort = [](auto const &lhs, auto const &rhs) {
     for (size_t i = 0; i < lhs.size(); i++) {
-      if (lhs[i] > rhs[i])
-        return false;
-      if (lhs[i] < rhs[i])
+      if (lhs[i] > rhs[i]) {
         return true;
+      }
+      if (lhs[i] < rhs[i]) {
+        return false;
+      }
     }
     return true;
   };
+
   sort(v.begin(), v.end(), lexsort);
-  std::vector<PointRefC> a(v.begin(), v.end());
-  std::vector<RefPointRefC> b(a.begin(), a.end());
-  ecdfk(b, dims);
-  size_t end = 0;
-  for (size_t i = 0; i < a.size(); ++i) {
-    if (a[i].rank == 0) {
-      if (i != end) {
-        v[end] = std::move(v[i]);
-      }
-      end += 1;
-    }
-  }
-  v.erase(v.begin() + end, v.end());
+  maximadc_maximak(v, dims, base);
+
   for (size_t i = 0; i < v.size(); ++i) {
-    for (size_t j = 0; j < dims; ++j) {
-      v[i][j] *= -maxima[j];
+    for (size_t j = 0; j < v[0].size(); ++j) {
+      v[i][j] *= maxima[j];
     }
   }
 }
@@ -565,16 +604,18 @@ bool updateMaximaND(std::vector<C> &v, M const &maxima, P &&p) {
 
   size_t i = 0;
   for (; i < v.size(); ++i) {
-    if (dominates(v[i], p))
+    if (dominates(v[i], p)) {
       return false;  // return if v[i] dominates p
-    if (dominates(p, v[i]))
+    }
+    if (dominates(p, v[i])) {
       break;
+    }
   }
   size_t end = i++;
   for (; i < v.size(); ++i) {
-    bool ok = !dominates(p, v[i]);
-    if (ok)
+    if (!dominates(p, v[i])) {
       v[end++] = std::move(v[i]);
+    }
   }
   v.erase(v.begin() + end, v.end());
   v.emplace_back(std::forward<P>(p));
@@ -596,53 +637,11 @@ std::vector<C> filterQuadD(std::vector<C> const &v, M const &maxima) {
 }
 
 template <typename C, typename M>
-std::vector<C> filterDivConqDC(std::vector<C> const &v, M const &maxima) {
-  using RefC = std::reference_wrapper<C>;
-  using PointRefC = Point<RefC>;
-  using RefPointRefC = std::reference_wrapper<PointRefC>;
-
-  auto aux = v;
-  auto dims = maxima.size();
-  for (size_t i = 0; i < aux.size(); ++i) {
-    for (size_t j = 0; j < dims; ++j) {
-      aux[i][j] *= -maxima[j];
-    }
-  }
-  auto lexsort = [](auto const &lhs, auto const &rhs) {
-    for (size_t i = 0; i < lhs.size(); i++) {
-      if (lhs[i] > rhs[i])
-        return false;
-      if (lhs[i] < rhs[i])
-        return true;
-    }
-    return true;
-  };
-  sort(aux.begin(), aux.end(), lexsort);
-  std::vector<PointRefC> a(aux.begin(), aux.end());
-  std::vector<RefPointRefC> b(a.begin(), a.end());
-  ecdfk(b, dims);
-
-  std::vector<C> res;
-  res.reserve(aux.size());
-  for (size_t i = 0; i < a.size(); ++i) {
-    if (a[i].rank == 0) {
-      res.push_back(std::move(aux[i]));
-    }
-  }
-  for (size_t i = 0; i < res.size(); ++i) {
-    for (size_t j = 0; j < dims; ++j) {
-      res[i][j] *= -maxima[j];
-    }
-  }
-  return res;
-}
-
-// TODO improve
-template <typename C, typename M>
 std::vector<C> filterDimSweep3D(std::vector<C> const &v, M const &maxima, size_t obj = 0) {
+  if (v.empty()) {
+    return {};
+  }
   std::vector<C> pointset;
-  if (v.empty())
-    return pointset;
   pointset.reserve(v.size());
 
   auto aux = v;
@@ -671,6 +670,22 @@ std::vector<C> filterDimSweep2D(std::vector<C> const &v, M const &maxima) {
   return res;
 }
 
+template <typename C, typename M>
+std::vector<C> filterDivConqD(std::vector<C> const &v, M const &maxima, size_t base = 3) {
+  const size_t dims = maxima.size();
+  if (dims < 2) {
+    throw("There must be at least 2 objectives!");
+  } else if (dims == 2) {
+    return filterDimSweep2D(v, maxima);
+  } else if (dims == 3) {
+    return filterDimSweep3D(v, maxima);
+  }
+
+  std::vector<C> res = v;
+  nondlib::inplace::filterDivConqD(res, maxima, base);
+  return res;
+}
+
 // Retuns true if point was inserted in v, i.e. if it is non-dominated, or false
 // otherwise.
 template <typename C, typename M, typename P>
@@ -696,8 +711,9 @@ std::vector<C> updateMaximaND(std::vector<C> const &v, M const &maxima, P &&p) {
   res.reserve(v.size());
   std::copy(v.begin(), it, std::back_inserter(res));
   for (it = it != v.end() ? ++it : it; it != v.end(); ++it) {
-    if (!dominates(p, *it))
+    if (!dominates(p, *it)) {
       res.push_back(*it);
+    }
   }
   res.emplace_back(std::forward<P>(p));
   return res;
