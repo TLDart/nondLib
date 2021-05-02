@@ -25,7 +25,7 @@ the function, and the latter simply returns a new container.
 The details for some of the functions are explained in the following article:
 
 Duarte M. Dias, Alexandre D. Jesus, Luís Paquete, A software library for
-archiving nondominated points, 2021 (submitted).
+archiving nondominated points, GECCO 2021 (to appear).
 
 **Note:** this is an early version of the library, and as such there may
 be breaking changes.
@@ -166,4 +166,4 @@ std::vector<C> nondlib::inplace::filterQuadD(std::vector<C> const& v, M const& m
 
 ## How to cite
 
-Duarte M. Dias, Alexandre D. Jesus, Luís Paquete, A software library for archiving nondominated points, 2021 (unpublished)
+Duarte M. Dias, Alexandre D. Jesus, Luís Paquete, A software library for archiving nondominated points, GECCO 2021 (to appear).
